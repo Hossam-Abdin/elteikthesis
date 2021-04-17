@@ -32,7 +32,7 @@ Python 3.9 should be installed on the operating system. All the
 requirements can be installed by typing the following command in
 the terminal or the command prompt.
 
-\begin{lstlisting}[language=bash]
+\begin{lstlisting}[language=bash, caption={Install requirements},captionpos=b]
 	$ pip install requirements.txt
 \end{lstlisting}
 
@@ -41,7 +41,7 @@ before installing the requirements, in order to have a separate
 environment for the analyzer. The commands to create and run the environment
 are:
 
-\begin{lstlisting}[language=bash]
+\begin{lstlisting}[language=bash, caption={Create virtual environment},captionpos=b]
 	$ python3 -m venv venv	
 	$ source venv/bin/activate
 \end{lstlisting}
@@ -52,7 +52,7 @@ In order to run the analyzer make sure to be inside the
 \textbf{\url{log_analyzer}} folder and type the following
 command:
 
-\begin{lstlisting}[language=bash]
+\begin{lstlisting}[language=bash, caption={Start application},captionpos=b]
 	$ python start.py
 \end{lstlisting}
 
@@ -61,8 +61,8 @@ in the browser (Firefox recommended). You will be able to see the following:
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=0.9\textwidth,height=200px]{images/start.png}
-	\caption{start of the application}
+	\includegraphics[width=0.9\textwidth,height=175px]{images/start.png}
+	\caption{Start of the application}
 	\label{fig:empty_page}
 \end{figure}
 
@@ -91,28 +91,89 @@ preference.
 Adding the profiler to the scheduler is the last step to configure
 the server-side, and the following example showing how to add the profiler.
 
-\begin{lstlisting}[language=c++]
+\begin{lstlisting}[language=c++, caption={Adding profiler},captionpos=b]
 	pipert::Scheduler sch(0, pipert::Profiler("udp:127.0.0.1:8000"));
 \end{lstlisting}
 
-\subsection{Client Side}
+\subsection{Client Side}\label{client_side}
 On the client-side, the same port number that has been provided to the profiler
 should be added in the \textbf{config.json} inside the \textbf{\url{log_analyzer}} folder. same for
 the IP as well.
 
-\begin{lstlisting}[language=bash]
+\begin{lstlisting}[language=bash, caption={connection configuration},captionpos=b]
 {
-	port: 8000
-	IP: 127.0.0.1
+	"PORT": "8000"
+	"IP": "127.0.0.1"
 }
 \end{lstlisting}
 
 An important note: The log analyzer will start analyzing and
-draw the visualization, at the end of the first packet cycle \ref{}, so, 
+draw the visualization, at the end of the first packet cycle \ref{g_config}, so, 
 the web page will be the same as \ref{fig:empty_page} 
 until the completion of the cycle.
 
+\section{Analyzer Configuration}
+The log analyzer is made to check the sanity and analyze various
+applications and systems, so having a configuration, was essential.
 
+The configuration is a JSON (JavaScript Object Notation) file,
+the choice of the format to be JSON was due to its
+lightweight, well-known among developers, and simplicity. 
+The config.json configuration file consists of 2 main parts, 
+general and checkers' configurations. Let's enumerate these configurations.
+
+\begin{lstlisting}[language=bash, caption={Sample configuration},captionpos=b, label={lst:sample_confing}]
+	{
+		"PORT": "8000",
+		"IP": "127.0.0.1",
+		"PACKET_CYCLE_THRESHOLD": 1000,
+		"checkers": [
+			{
+				"name": "frozen_checker",
+				"enabled": true,
+				"parameters": {
+					"FROZEN_LIMITS": 20
+				}
+			}
+		]
+	}
+\end{lstlisting}
+
+\subsection{General Configuration} \label{g_config}
+Consist of 3 configurations, \textbf{PORT}, \textbf{IP}, 
+and \textbf{\url{PACKET_CYCLE_THRESHOLD}}. The first two were discussed in \ref{client_side}.
+
+The \textbf{\url{PACKET_CYCLE_THRESHOLD}} is an integer value that describes
+how many packets should the analyzer receive before running the checkers once
+and these packets' events will be stored in the channels and when the cycle
+finishes (when the number of packets received is equal to \textbf{\url{PACKET_CYCLE_THRESHOLD}}), these
+events will be deleted from the channels and a new packets cycle starts.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth,height=200px]{images/packets_cycle.png}
+	\caption{Packets cycle}
+	\label{fig:packets_cycle}
+\end{figure}
+
+\subsection{Checkers' Configuration}
+As it is shown from \ref{lst:sample_confing}, the checkers' configuration is a
+list of dictionaries where each dictionary is a checker's configuration. Each configuration
+contains the checker's name in the \textbf{name} field, whether it should work or not in
+the \textbf{enabled} field, and a \textbf{parameters} field where the parameter
+of the checker can be created or changed.
+
+The \textbf{name} field should be the same name as the file of the checker 
+without the extension (.py). And that is how the dynamic importing module in 
+the project will be able to import the checker with its configuration \ref{}.
+
+The \textbf{enabled} field is a boolean field to turn on or off the checker.
+
+The \textbf{parameters} field is a dictionary with as many keys as the checker's
+parameters. These values can be changed based on the DSP application using the
+analyzer, and it is the user's responsibility to assign the appropriate values.
+
+In the next section, we will discuss the implemented checkers in detail.
 \begin{table}[H]
 	\centering
 	\begin{tabular}{ | m{0.25\textwidth} | m{0.65\textwidth} | }
