@@ -28,7 +28,8 @@
 \RequirePackage{etoolbox}
 \RequirePackage{xparse}
 \RequirePackage{ifthen}
-
+\usepackage{pdfpages}
+\usepackage{url}
 % ------------------------------
 % Paraméterek feldolgozása
 \newtoggle{oneside}\toggletrue{oneside}
