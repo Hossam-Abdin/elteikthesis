@@ -11,7 +11,7 @@ data coming from the PipeRT's profiler, in a server-client relationship.
 
 The analyzer was build using python in the backends and Javascript in the frontend,
 it provides various checkers to investigate the sanity of the pipeline created by
-user using PipeRT, graphs associated with the measurements prepared by the checkers, and visualization
+user using PipeRT, graphs associated with the measurements, and visualization
 of the pipeline and how the channels are structured.
 
 The analyzer in itself was built to be an analyzing framework where
@@ -20,7 +20,7 @@ it is relatively easy to add new features and already prepared to be extended
 by new checkers and measurements.
 
 
-\section{Installation Guide}
+\section{Installation Guide}\label{sec:installiation_guide}
 PipeRT is currently supporting Linux only, but soon,
 it will support Windows as well. That said, the steps to install
 the analyzer are the same in both operations systems.
@@ -31,7 +31,7 @@ is where all of the Installation steps will take place.
 Python 3.9 should be installed on the operating system. All the
 requirements can be installed by typing the following command in
 the terminal or the command prompt.
-
+\newline
 \begin{lstlisting}[language=bash, caption={Install requirements},captionpos=b]
 	$ pip install requirements.txt
 \end{lstlisting}
@@ -40,8 +40,8 @@ It is also recommended to create a python virtual environment
 before installing the requirements, in order to have a separate
 environment for the analyzer. The commands to create and run the environment
 are:
-
-\begin{lstlisting}[language=bash, caption={Create virtual environment},captionpos=b]
+\newline
+\begin{lstlisting}[language=bash, label={code:venv}, caption={Create virtual environment},captionpos=b]
 	$ python3 -m venv venv	
 	$ source venv/bin/activate
 \end{lstlisting}
@@ -51,14 +51,14 @@ are:
 In order to run the analyzer make sure to be inside the
 \textbf{\url{log_analyzer}} folder and type the following
 command:
-
+\newline
 \begin{lstlisting}[language=bash, caption={Start application},captionpos=b]
 	$ python start.py
 \end{lstlisting}
 
 This will start the application, so once you type \url{127.0.0.1:5000}
 in the browser (Firefox recommended). You will be able to see the following:
-
+\newline
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.9\textwidth,height=175px]{images/start.png}
@@ -71,7 +71,7 @@ To establish a connection between the profiler (Client)
 and the log analyzer (server), there should be modifications in both
 sides.
 
-\subsection{Server Side}
+\subsection{Server Side} \label{sec:server_side_config}
 
 The profiler is the utility for monitoring the DSP pipeline and sending logs,
 it has 3 arguments, first is \textbf{\url{destination_uri}},
@@ -89,8 +89,8 @@ is the one to choose, the IP and socket are based on the user
 preference.
 
 Adding the profiler to the scheduler is the last step to configure
-the server-side, and the following example showing how to add the profiler.
-
+the server-side, and the following example shows how to add the profiler.
+\newline
 \begin{lstlisting}[language=c++, caption={Adding profiler},captionpos=b]
 	pipert::Scheduler sch(0, pipert::Profiler("udp:127.0.0.1:8000"));
 \end{lstlisting}
@@ -99,11 +99,11 @@ the server-side, and the following example showing how to add the profiler.
 On the client-side, the same port number that has been provided to the profiler
 should be added in the \textbf{config.json} inside the \textbf{\url{log_analyzer}} folder. same for
 the IP as well.
-
+\newline
 \begin{lstlisting}[language=bash, caption={connection configuration},captionpos=b]
 {
-	"PORT": "8000"
-	"IP": "127.0.0.1"
+    "port": 8000,
+    "ip": "127.0.0.1"
 }
 \end{lstlisting}
 
@@ -119,27 +119,42 @@ applications and systems, so having a configuration, was essential.
 The configuration is a JSON (JavaScript Object Notation) file,
 the choice of the format to be JSON was due to its
 lightweight, well-known among developers, and simplicity. 
-The config.json configuration file consists of 2 main parts, 
-general and checkers' configurations. Let's enumerate these configurations.
-
+The config.json configuration file consists of 3 main parts, 
+general, measurements' and checkers' configurations. Let's enumerate these configurations.
+\newline
 \begin{lstlisting}[language=bash, caption={Sample configuration},captionpos=b, label={lst:sample_confing}]
 	{
 		"PORT": "8000",
 		"IP": "127.0.0.1",
 		"PACKET_CYCLE_THRESHOLD": 1000,
+		"pipeline_measurements": [
+			{
+				"name": "pipeline_measurement_1",
+				"enabled": true,
+				"key": "Pipeline Measurement 1"
+			}
+		],
+		"channel_measurements": [
+			{
+				"name": "channel_measurent_1",
+				"enabled": true,
+				"key": "Channel Measurement 1"
+			}
+		],
 		"checkers": [
 			{
-				"name": "frozen_checker",
+				"name": "checker_1",
 				"enabled": true,
+				"measure_key": "Channel Measurement 1",
 				"parameters": {
-					"FROZEN_LIMITS": 20
+					"THRESHOLD": 20
 				}
 			}
 		]
 	}
 \end{lstlisting}
 
-\subsection{General Configuration} \label{g_config}
+\subsection{General Configurations} \label{sec:g_config}
 Consist of 3 configurations, \textbf{PORT}, \textbf{IP}, 
 and \textbf{\url{PACKET_CYCLE_THRESHOLD}}. The first two were discussed in \ref{client_side}.
 
@@ -148,7 +163,7 @@ how many packets should the analyzer receive before running the checkers once
 and these packets' events will be stored in the channels and when the cycle
 finishes (when the number of packets received is equal to \textbf{\url{PACKET_CYCLE_THRESHOLD}}), these
 events will be deleted from the channels and a new packets cycle starts.
-
+\newline
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.9\textwidth,height=200px]{images/packets_cycle.png}
@@ -156,11 +171,24 @@ events will be deleted from the channels and a new packets cycle starts.
 	\label{fig:packets_cycle}
 \end{figure}
 
-\subsection{Checkers' Configuration}
+\subsection{Measurements' Configurations}
+These configurations are split into two categories, the pipeline's measurement, and
+the channel's measurements. Despite their difference from the measuring point of view
+as discussed in \ref{}, they do share the same texture of their configuration. (\ref{lst:sample_confing})
+
+Both of the two main measurements are a list of dictionaries, where each dictionary
+represents a measurement, and each measurement has three key-value pairs,
+\textbf{name} to be able to dynamically import them as in \ref{}, \textbf{enabled}
+to turn the measurement on or off, and \textbf{key} this will be the shown
+text for the measurement and will also help to connect the measurement to 
+a specific checker if needed (see \ref{}).
+
+\subsection{Checkers' Configurations}
 As it is shown from \ref{lst:sample_confing}, the checkers' configuration is a
 list of dictionaries where each dictionary is a checker's configuration. Each configuration
 contains the checker's name in the \textbf{name} field, whether it should work or not in
-the \textbf{enabled} field, and a \textbf{parameters} field where the parameter
+the \textbf{enabled} field, \textbf{measure\_key} to specify the measurement
+for that checker if needed, and a \textbf{parameters} field where the parameter
 of the checker can be created or changed.
 
 The \textbf{name} field should be the same name as the file of the checker 
@@ -169,109 +197,242 @@ the project will be able to import the checker with its configuration \ref{}.
 
 The \textbf{enabled} field is a boolean field to turn on or off the checker.
 
+The \textbf{measure\_key} field is a string to connect the checker with
+its corresponding measurement.
+
 The \textbf{parameters} field is a dictionary with as many keys as the checker's
 parameters. These values can be changed based on the DSP application using the
 analyzer, and it is the user's responsibility to assign the appropriate values.
 
-In the next section, we will discuss the implemented checkers in detail.
-\begin{table}[H]
+\section{Measurements} \label{sec:measures}
+The backbone of the log analyzer is the measurements, and that is the reason for implementing
+various of them, given these varieties of measurements, it is expected to be able to 
+help to check the sanity of the pipeline and spotting the bottlenecks for the user. They
+are also essential for most of the checkers (more about it in \ref{sec::checkers}).
+
+They consist of two categories, \textbf{channel's} and \textbf{pipeline's} measurements. All the
+measurements run once per packet cycle and the graphs resulted should be drawn every ten cycles,
+as can be seen from figure \ref{fig:measurement_graph}. The following pages contain a detailed description
+of the categories and their measurements.
+\newline
+\begin{figure}[H]
 	\centering
-	\begin{tabular}{ | m{0.25\textwidth} | m{0.65\textwidth} | }
-		\hline
-		\textbf{Phasellus tortor} & \textbf{Aenean consequat} \\
-		\hline \hline
-		\emph{Sed malesuada} & Aliquam aliquam velit in convallis ultrices. \\
-		\hline
-		\emph{Purus sagittis} &  Quisque lobortis eros vitae urna lacinia euismod. \\
-		\hline
-		\emph{Pellentesque} & Curabitur ac lacus pellentesque, eleifend sem ut, placerat enim. Ut auctor tempor odio ut dapibus. \\
-		\hline
-	\end{tabular}
-	\caption{Maecenas tincidunt non justo quis accumsan}
-	\label{tab:example-1}
-\end{table}
+	\includegraphics[width=0.9\textwidth,height=200px]{images/basic_graph.png}
+	\caption{Measurement's graph}
+	\label{fig:measurement_graph}
+\end{figure}
 
-\subsection{Sorok és oszlopok egyesítése} % Multi rows and multi columns
+\subsection{Channel's Measurements}
+The measurements in this section focus on the channels and their attributes. They are seven implemented
+measurements, and the details of them will be explained below.
 
-Mauris a dapibus lectus. Vestibulum commodo nibh ante, ut maximus magna eleifend vel. Integer vehicula elit non lacus lacinia, vitae porttitor dolor ultrices. Vivamus gravida faucibus efficitur. Ut non erat quis arcu vehicula lacinia. Nulla felis mauris, laoreet sed malesuada in, euismod et lacus. Aenean at finibus ipsum. Pellentesque dignissim elit sit amet lacus congue vulputate.
+\subsubsection{Drop Rate Measurement}
+Calculating the number of dropped events over the number of executed events. In case of no executed events,
+the result will be \textbf{1}, if no dropped events, it will return \textbf{-1}, and if both events are missing
+\textbf{-1} will be the output of the calculation.
 
-\begin{table}[htb]
+\subsubsection{Drop Ratio Measurement}
+Calculating the number of dropped events over the number of read events. In case of no read events,
+the result will be \textbf{1}, if no dropped events, it will return \textbf{-1}, and if both events are missing
+\textbf{-1} will be the output of the calculation.
+ 
+\subsubsection{Execution Time Measurement}
+This measurement is responsible of calculating the average of the execution time by dividing the sum
+of the execution time events' average over the number of the execution time. In case the is no execution
+time events, it will output \textbf{-1}.
+
+\subsubsection{Fill Time Measurement}
+Its responsibility is calculating the average of the fill time by dividing the sum
+of the fill time events' average over the number of the fill time. In case the is no fill
+time events, it will output \textbf{0}.
+
+\subsubsection{Time To Buffer Average Measurement}\label{sec:time_to_buffer_average}
+
+\section{Checkers}\label{sec::checkers}
+Checkers results flags and measurements of different aspects of the channel and pipeline. All 
+the enabled checkers run for all the channels in the pipeline and in case the check passes, it will appear
+in the webpage as in \ref{fig:passed_checker}, on the other hand, figure \ref{fig:failed_checker} shows 
+the representation of a failed check in the current packets cycle.
+\newline
+\begin{figure}[H]
 	\centering
-	\begin{tabular}{ | c | r | r | r | r | r | r | }
-		\hline
-		\multirow{2}{*}{\textbf{Quisque}} & \multicolumn{2}{ c | }{\textbf{Suspendisse}} & \multicolumn{2}{ c | }{\textbf{Aliquam}} & \multicolumn{2}{ c | }{\textbf{Vivamus}} \\
-		\cline{2-7}
-		& Proin & Nunc & Proin & Nunc & Proin & Nunc \\
-		\hline \hline		
-		Leo & 2,80 MB & 100\% & 232 KB & 8,09\% & 248 KB & 8,64\% \\
-		\hline
-		Vel & 9,60 MB & 100\% & 564 KB & 5,74\% & 292 KB & 2,97\% \\
-		\hline
-		Auge & 78,2 MB & 100\% & 52,3 MB & 66,88\% & 3,22 MB & 4,12\% \\
-		\hline 
-	\end{tabular}
-	\caption[Rövid cím a táblázatjegyzékbe]{Vivamus ac arcu fringilla, fermentum neque sed, interdum erat. Mauris bibendum mauris vitae enim mollis, et eleifend turpis aliquet.}
-	\label{tab:example-2}
-\end{table}
+	\includegraphics[width=0.9\textwidth,height=50px]{images/passed_checker.png}
+	\caption{Passed checker}
+	\label{fig:passed_checker}
+\end{figure}
 
-\subsection{Több oldalra átnyúló táblázatok} % Long tables over multiple pages
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth,height=50px]{images/failed_checker.png}
+	\caption{Failed checker}
+	\label{fig:failed_checker}
+\end{figure}
+The checkers are stateless, so no information from the previous cycles is saved. Each checker has a name, 
+can have a configuration, and a description of what does it check. We are going to enumerate these information
+in the following pages.
 
-Nunc porta placerat leo, sit amet porttitor dui porta molestie. Aliquam at fermentum mi. Maecenas vitae lorem at leo tincidunt volutpat at nec tortor. Vivamus semper lacus eu diam laoreet congue. Vivamus in ipsum risus. Nulla ullamcorper finibus mauris non aliquet. Vivamus elementum rhoncus ex ut porttitor.
+\subsection{Frozen Checker}
+The checker name on the webpage is \textbf{\url{FROZEN}}, it checks if a channel received one or more events in the last packets cycle, 
+if it did not receive any, the check fails for this cycle.
 
-\begin{center}
-	\begin{longtable}{ | p{0.3\textwidth} | p{0.7\textwidth} | }
-		
-		\hline
-		\multicolumn{2}{|c|}{\textbf{Praesent aliquam mauris enim}}
-		\\ \hline
-		
-		\emph{Suspendisse potenti} & \emph{Lorem ipsum dolor sit amet}
-		\\ \hline \hline
-		\endfirsthead % első oldal fejléce
-		
-		\hline
-		\emph{Suspendisse potenti} & \emph{Lorem ipsum dolor sit amet}
-		\\ \hline \hline
-		\endhead % többi oldal fejléce
-		
-		\hline
-		\endfoot % többi oldal lábléce
-		
-		\endlastfoot % utolsó oldal lábléce
-		
-		\emph{Praesent}
-		& Nulla ultrices et libero sit amet fringilla. Nunc scelerisque ante tempus sapien placerat convallis.
-		\\ \hline
-		
-		\emph{Luctus}
-		& Integer hendrerit erat massa, non hendrerit risus convallis at. Curabitur ultrices, justo in imperdiet condimentum, neque tortor luctus enim, luctus posuere massa erat vitae nibh.
-		\\ \hline
-		
-		\emph{Egestas}
-		& Duis fermentum feugiat augue in blandit. Mauris a tempor felis. Pellentesque ultricies tristique dignissim. Pellentesque aliquam semper tristique. Nam nec egestas dolor. Vestibulum id elit quis enim fringilla tempor eu a mauris. Aliquam vitae lacus tellus. Phasellus mauris lectus, aliquam id leo eget, auctor dapibus magna. Fusce lacinia felis ac elit luctus luctus.
-		\\ \hline
-		
-		\emph{Dignissim}
-		& Praesent aliquam mauris enim, vestibulum posuere massa facilisis in. Suspendisse potenti. Nam quam purus, rutrum eu augue ut, varius vehicula tellus. Fusce dui diam, aliquet sit amet eros at, sollicitudin facilisis quam. Phasellus tempor metus vel augue gravida pretium. Proin aliquam aliquam blandit. Nulla id tempus mi. Fusce in aliquam tortor.
-		\\ \hline
-		
-		\emph{Pellentesque}
-		& Donec felis nibh, imperdiet a arcu non, vehicula gravida nibh. Quisque interdum sapien eu massa commodo, ac elementum felis faucibus.
-		\\ \hline
-		
-		\emph{Molestie}
-		& Cras ullamcorper tellus et auctor ultricies. Maecenas tincidunt euismod lectus nec venenatis. Suspendisse potenti. Pellentesque pretium nunc ut euismod cursus. Nam venenatis condimentum quam. Curabitur suscipit efficitur aliquet. Interdum et malesuada fames ac ante ipsum primis in faucibus.
-		\\ \hline
-		
-		\emph{Vivamus semper}
-		& In purus purus, faucibus eu libero vulputate, tristique sodales nunc. Nulla ut gravida dolor. Fusce vel pellentesque mi, vel efficitur eros. Nunc vitae elit tellus. Sed vestibulum auctor consequat. 
-		\\ \hline
-		
-		\emph{Condimentum}
-		& Nulla scelerisque, leo et facilisis pretium, risus enim cursus turpis, eu suscipit ipsum ipsum in mauris. Praesent eget pulvinar ipsum, suscipit interdum nunc. Nam varius massa ut justo ullamcorper sollicitudin. Vivamus facilisis suscipit neque, eu fermentum risus. Ut at mi mauris.
-		\\ \hline
-		
-		\caption{Praesent ullamcorper consequat tellus ut eleifend}
-		\label{tab:example-3}		
-	\end{longtable}
-\end{center}
+\subsection{Drop Rate Checker}
+The name on the webpage is \textbf{\url{HIGH_DROP_RATE}}, it Calculates the drop rate of 
+a channel (see \ref{}), and passes if and only if the rate is bigger than the configured threshold value. The
+configuration consists of one key-value pair, \textbf{\url{DROP_RATE_THRESHOLD}} is the key, and the already configured
+value is \textbf{0.5}.
+
+\subsection{Drop Ratio Checker}
+The name on the front-end is \textbf{\url{HIGH_DROP_RATIO}}, it is responsible for calculating the drop ratio
+(see \ref{}), and if the calculated value exceeds the threshold configured then the check fails. The 
+\textbf{\url{DROP_RATIO_THRESHOLD}} is the only configuration and \textbf{0.75} is the default value.
+
+\subsection{Execution Time Checker}
+\textbf{\url{HIGH_EXECUTION_TIME}} is the name shown on the page, it checks whether the execution time of a channel
+did surpass the configured threshold. The calculation of the execution time can be found at \ref{}. \textbf{0.75}
+is the default value for the only configuration \textbf{\url{EXECUTION_TIME_THRESHOLD}}.
+
+\subsection{Read Time Checker}
+Very Similar to the \textbf{Execution Time Checker}, but checking for the reading time. The configuration
+consists of one key-value pair, which is the \textbf{\url{CHANNEL_READ_THRESHOLD}} and the default value is 
+\textbf{20}. The name on the page is \textbf{\url{HIGH_READ_TIME}}. (see \ref{} for the measurement details)
+
+\subsection{Fill Time Checker}
+Having the same methodology for checking as the \textbf{Execution Time Checker} and the \textbf{Read Time Checker}.
+Its configuration contains only one key-value pair to set the threshold of the filling time of a channel.
+\textbf{\url{CHANNEL_FILL_THRESHOLD}} is the configuration's name, and the default value is \textbf{20}. The checker page's
+name is \textbf{\url{HIGH_FILL_TIME}}.
+
+\subsection{Time To Buffer Average Checker}
+
+\section{Graphical User Interface}
+The analyzer interface is a webpage containing two pages, \textbf{Home} and \textbf{Measurements}. In this
+section, I will describe the components of each page and the features provided.
+
+The navigation bar (figure \ref{fig:nav_bar}) is shared between the two pages and controls navigating
+between the two of them. To load the \textbf{Home} page, you can click on either the \textit{Home} or
+\textit{LogAnalyzer}. In case of \textbf{Measurements}, clicking on \textit{Measurements} will load it.
+\newline
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1.1\textwidth,height=40px]{images/nav_bar.png}
+	\caption{The navigation bar}
+	\label{fig:nav_bar}
+\end{figure}
+
+\subsection{Home Page}
+The home page should give a brief description of the pipeline's status through its components. It consists
+of checkers for channels (\ref{fig:checkers_home_page}), measurements section (\ref{fig:measures_home_page}), 
+and pipeline visualization (\ref{fig:pipeline_viz_home_page}).
+
+As mentioned before, before completing the first packet cycle, the home page will look as in figure \ref{fig:empty_page}.
+Once the profiler is sending regularly, you can expect to have the home page similar to figure \ref{fig:home_page_running_state}.
+
+Each channel has a corresponding color which is used through the different components in order to ease the
+distinguishment and to have a visual identity belong to each of them.
+\newline
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1.0\textwidth,height=300px]{images/home_page_in_running_state.png}
+	\caption{Home page in running state}
+	\label{fig:home_page_running_state}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth,height=200px]{images/checkers_home_page.png}
+	\caption{Checkers in the home page}
+	\label{fig:checkers_home_page}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth,height=300px]{images/measures_home_page.png}
+	\caption{Measurements in the home page}
+	\label{fig:measures_home_page}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth,height=150px]{images/pipeline_viz.png}
+	\caption{Pipeline's visualization in the home page}
+	\label{fig:pipeline_viz_home_page}
+\end{figure}
+
+\subsubsection{Channels' Checkers}
+They are located in the top left of the home page (\ref{fig:home_page_running_state}), 
+each channel is represented as a box where the name
+of the channel is at the top of it and the checkers and their status come after. 
+
+\subsubsection{Measurements}\label{measuremets_home}
+They can be found in the top right of the home page (\ref{fig:home_page_running_state}). They are
+two measurements on the page, \textbf{execution Time} and \textbf{drop rate}, these two measurements
+were chosen because of their capabilities of reflecting important aspects of the channels.
+
+As shown in figure \ref{fig:measurement_graph}, the name of the measurement is at the top, and the channels'
+names and colors following come after, and then the graph itself. Each channel corresponds to the color
+on the left of its name.
+
+To be able to see the exact axis of a certain point of the graph, you can hover with the mouse, 
+and the result will be as in figure \ref{fig:hover_graph}. The name of the channel and its color
+will also be included. 
+\newline
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth,height=150px]{images/hover_graph.png}
+	\caption{Hovering a point in a graph}
+	\label{fig:hover_graph}
+\end{figure}
+
+In many cases, some channels can be unseen because of other channels' high y-axis value. If you want
+to hide the channel line graph, you can click on the channel's name or color, and there will be 
+a horizontal line on the clicked channel's name to indicate that its measurements will not be shown
+in the graph. Figure 
+\ref{fig:remving_channel_graph} shows the effect of this action.
+\newline
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth,height=300px]{images/removnig_channel_graph.jpg}
+	\caption{Graph after removing a channel}
+	\label{fig:removing_channel_graph}
+\end{figure}
+
+\subsubsection{Pipeline Visualization}
+It is located at the bottom of the home page. Each box contains the name of a channel, and the box's color is the
+channel's color, and the arrows between these boxes represent the connection between the channels in the
+actual pipeline created by the user as in figure \ref{fig:pipeline_viz_home_page}.
+
+You can change the position of the pipeline visualization by clicking anywhere in the bottom half of the page
+beside the channels' boxes themselves and dragging the visualization around. It is also possible to change the 
+shape of the visualization or rearrange it by clicking any of the channels' boxes and dragging.
+\newline
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth,height=250px]{images/moving_viz_graph.jpg}
+	\caption{Rearranging the pipeline visualization}
+	\label{fig:remving_channel_graph}
+\end{figure}
+
+\subsection{Measurements Page}
+The page contains all the measurements explained in \ref{sec:measures}, it is divided into \textbf{channels'} and
+\textbf{pipeline's} measurements as in figure \ref{fig:measures_empty} and \ref{fig:measures_running_state}. The
+channels' measurements come before the pipeline's measurements.
+
+The graphs represent 10 packet cycles of their measurements. Each channel has the same color through all the
+various graphs to easily distinguish between each other same as in the \textbf{Home} page.
+\newline
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth,height=350px]{images/measures_empty.jpg}
+	\caption{Measurements page in empty state}
+	\label{fig:measures_empty}
+\end{figure}
+
+All the features that were in the measurements section of the \textit{Home} page (\ref{measuremets_home})
+are extended to this page as well, including removing one or more channels from the graph and
+seeing the exact coordinate of a point.
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth,height=350px]{images/measures_running_state.jpg}
+	\caption{Measurements page in running state}
+	\label{fig:measures_running_state}
+\end{figure}
