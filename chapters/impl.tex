@@ -18,7 +18,7 @@ design and its components, an overview of the profiler is needed. The next secti
 	\label{fig:general_work_flow}
 \end{figure}
 
-\section{PipeRT Profiler} % Theorem-like items
+\section{PipeRT Profiler}\label{sec:profiler}
 The profiler is the utility in PipeRT responsible for profiling and monitoring functionality. It is a
 sub-system to collect, aggregate, serialize, and send data to the log analyzer. The different configurations
 of the profiler can be found at \ref{sec:server_side_config}.
@@ -33,8 +33,8 @@ The events are actions that happen to a packet in a channel. There are six prede
 
 Since the profiler is supposed to aggregate these events, the \textit{log aggregator}, a helper utility in the profiler, is going to group these events
 based on the event type, and these aggregated data will be sent to the log analyzer. Each aggregated event will have
-a log count, and that is the number of logged events, and the time aggregation started, minimum time,
-maximum time, and the average time that event took to complete.
+a log count, and that is the number of logged events, and the time aggregation started, minimum,
+maximum, and the average time that event took to complete.
 
 \subsubsection{Pushed Event}\label{sec:pushed_event}
 Time in packet's timeline when the packet is filled with data and pushed into the channel buffer.
@@ -52,12 +52,12 @@ Time spent between acquiring the packet and pushing it into the buffer
 Time spent between retrieving a packet and releasing it by the retriever
 
 \subsubsection{Dropped Packet Event}
-Packet was dropped because the buffer was full when the packet arrived.
+Packet was dropped because the buffer of a channel was full when the packet arrived.
 
 \subsection{Sending Data} \label{sec:sending_data}
 The profiler has a \textit{Sender Logger} auxiliary utility, which is responsible for serializing and sending
-the data aggregated by the profiler. The sending part is the bridge of communication between the \textbf{PipeRT Profiler}
-and the log analyzer so it was very important to consider the different possibilities before choosing the appropriate one.
+the data aggregated by the profiler. The sending part is the bridge of communication between the Profiler
+and the analyzer so it was very important to consider the different possibilities before choosing the appropriate one.
 
 Sending through sockets was the choice in sending and it is normal to use with such application, but the serialization
 was not as clear of a choice, there are various ways to serialize the data, we are going to discuss four of them,
@@ -74,10 +74,10 @@ Protobuf or protocol buffers from \textit{Google} is a work out of the box exper
 extra maintenance in the long run and can be slow.
 
 The final decision was using \textbf{binary sending}, despite that choosing this will lead to always make
-sure that the \textbf{profiler} and \textbf{analyzer} are up to date with each other's sending and receiving
+sure that the profiler and analyzer are up to date with each other's sending and receiving
 changes, the performance will be better compared to the other possibilities, and this performance
 difference is an important key to minimize the delay hence having a better live analyzing which is the
-main goal for the \textbf{log analyzer}.
+main goal for the log analyzer.
 
 \subsection{Packet serialization}\label{sec:packet_serialization}
 The profiler sends packets of bytes, all the packets have the same structure, starts with \textit{DGRP}
@@ -95,24 +95,24 @@ eight bytes double for \textit{maximum value}, and eight bytes double for \texti
 \end{figure}
 
 sending the packets is the last step in the profiler's workflow (\ref{fig:general_work_flow}) 
-and from there, the log analyzer will start receiving and analyzing as we see in the following pages.
+and from there, the log analyzer will start receiving and analyzing.
 
 The log analyzer is separated into two main parts, as can be seen from \ref{fig:general_work_flow}.
 In the next sections, details about these parts, their different components, and the connection between
 them will be our topic.
 
 \section{The Analyzing Server}
-The first and the most vital part of the two, it is importance comes from its responsibility
+The first and the most vital part of the two, its importance comes from its responsibility
 to hold the logic of the analyzing, reading configuration, sending the data to the \textbf{GUI server}.
-The coding of the \textbf{analyzing server} was done in \textit{python3} and the language choice was because
+The coding of the \textbf{analyzing server} was done in \textit{Python3} and the language choice was because
 it is easy to use and fast to develop in which is suitable since it is expected from the user of the
-analyzer to extend it to match their need.
+analyzer to extend it.
 
 
 The \textit{Front Controller Pattern} is the most used in the design of the \textbf{analyzing server},
-and the \textit{Front Controller Pattern} is used to provide a centralized request handling 
+and it is used to provide a centralized request handling 
 mechanism so that all requests will be handled by a single handler which is very suitable to the various
-checkers and measurements.
+checkers and measurements in the project.
 
 \textbf{AnalyzerServer} is the heart class of the \textbf{analyzing server} so it is the main controller
 and responsible of starting and providing data for other controllers.
@@ -120,18 +120,18 @@ and responsible of starting and providing data for other controllers.
 The first task for the \textbf{analyzing server} is to receive the packets from the profiler and decode it.
 
 \subsection{Receiving and Decoding Packets}
-Configuring the ip and port is crucial for successful receiving, the \textit{socket} library in python
+Configuring the ip and port is crucial for successful receiving, the \textit{socket} library in \textit{Python}
 is used to create the server and listen to the upcoming requests. The implementation of the server is
 inside the \textbf{AnalyzerServer} class and upon receiving the packets the class is starting running the
 other controllers.
 
 The \textbf{PacketsManager} is the controller responsible for decoding the packets and distinguish them
 by giving each of them different id number, it has two main methods, \textbf{add} to decode and add new packet
-and \textbf{get\_latest\_packet} which is used as an input for another controller. The \textit{sigleton} 
+and \textbf{get\_latest\_packet} which is used as an input for the \textbf{ChannelsManager}. The \textit{sigleton} 
 desgin pattern was used to implement the \textbf{PacketsManager} as to have single instance of it 
 everywhere in the code.
 \newline
-\begin{lstlisting}[language=python, label=PacketsManager, caption={puplic methods of PacketsManager},captionpos=b]
+\begin{lstlisting}[language=Python, label=PacketsManager, caption={Puplic methods of PacketsManager},captionpos=b]
 def add(self, packet):
 	packet = PacketDecoder(packet).decode_packet()
 	packet.set_id(self.__packets_count)
@@ -160,7 +160,7 @@ The \textbf{PacketDecoder} is the utility responsible for decoding and insinuati
 before going into details about how the decoding takes place, \textit{endianness} should be discussed first.
 
 \textit{Endianness} is the order or sequence of bytes in computer memory. 
-\textit{Endianness} is primarily expressed as big-endian (BE) or little-endian (LE). 
+it is primarily expressed as big-endian (BE) or little-endian (LE). 
 A big-endian system stores the most significant byte at the smallest memory address and 
 the least significant byte at the largest. A little-endian system, in contrast, stores 
 the least significant byte at the smallest address.
@@ -172,11 +172,11 @@ the least significant byte at the smallest address.
 	\label{fig:be_vs_le}
 \end{figure}
 Since the packets comes in bytes (\ref{sec:sending_data}), the endianess of the bytes can form
-an obstacle while decoding, python has some built-in utilities to overcome that and these utilities
+an obstacle while decoding, \textit{Python} has built-in utilities to overcome that and these utilities
 were used in the decoding such as \textbf{decode} method for strings, \textbf{from\_bytes} method for integers,
 and \textbf{unpack} method in \textbf{struct} data structure for double values.
 \newline
-\begin{lstlisting}[language=python, label=code:decoding, caption={decoding of a packet},captionpos=b]
+\begin{lstlisting}[language=Python, label=code:decoding, caption={Decoding of a packet},captionpos=b]
 def decode_packet(self):
 	pos = 0
 	if self.__check_for_correct_packet(self.__packet[pos:pos+4]):
@@ -193,9 +193,9 @@ def decode_packet(self):
 		raise ValueError
 \end{lstlisting}
 Code \ref{code:decoding} is showing the \textbf{decode\_packet} method in the \textbf{PacketDecoder}
-class, the algorithm is straightforward as it is following the bytes order as in figure \ref{fig:packet_structure}.
+class, the algorithm is straightforward as it is following the bytes order from figure \ref{fig:packet_structure}.
 \newline
-\begin{lstlisting}[language=python, label=code:decoding_methods, caption={helper methods in decoding},captionpos=b]
+\begin{lstlisting}[language=Python, label=code:decoding_methods, caption={Helper methods in decoding},captionpos=b]
 def __get_keyword(self, pos):
 	keyword = b""
 	while self.__packet[pos] != b"\x00":
@@ -223,7 +223,7 @@ def __get_float_val(self, pos):
 	return ret, pos
 \end{lstlisting}
 
-Code \ref{code:decoding_methods} shows the usage of the python decoding utilities mentioned before
+Code \ref{code:decoding_methods} shows the usage of the \textit{Python} decoding utilities mentioned before
 and how they can be used for different types.
 
 The next step after decoding is managing the channels and assign the events to the correct channels.
@@ -234,7 +234,7 @@ about the pipeline and the system performance. Each channel is represented by th
 and the controller for these channels is the \textbf{ChannelsManager} class.
 
 The \textbf{Channel} class is responsible for representing the channel so it contains basic fields 
-for name and events. The class is also storing the different checkers' flags and measurements. Each
+for name and events. The class is also storing the different checkers' flags and measurements. Each channel
 is only storing events during the packet cycle as mentioned in \ref{sec:g_config}, the last packet id that
 has been added to the channel is also stored as it is needed for measurements.
 
@@ -244,18 +244,18 @@ to send them to the \textbf{GUI server}, and different approaches were used to f
 \subsubsection{Checkers approach}
 Checkers are sent at the end of every packet cycle, and as a first approach the measurements were sent
 in the same way, but this leads to two issues, firstly, the \textbf{GUI server} has to update and redraw
-the graphs too frequently that in a case when the profiler is sending very frequently that browser might
+the graphs too frequently that in a case when the profiler is sending very frequently the browser might
 stop, secondly, not every measurement is worth of plotting, for example when having ten packet cycles with
 the same measurement.
 
 \subsubsection{Buffering approach}
-We encountered two obstacles and in this approach, the intendant was to slow down the sending of the measurements
+We encountered two obstacles in this approach, the intendant was to slow down the sending of the measurements
 so that the browser can draw the graphs without overwhelming it. Instead of sending in every packet cycle,
 the measurements are going to be stored in lists, and once the \textbf{AnalyzerServer} is requesting the measurements
 the channel is going to send them, and empty the lists and this repeat every specific number of cycles. It is
 implemented to be ten cycles for now.
 
-\subsubsection{Buffering and RDB approach}
+\subsubsection{Buffering and RDB approach}\label{sec:buffering_rdb}
 The buffering approach was successfully able to deal with the first obstacle, but that leaves the problem of
 having unnecessary points in the graphs, to solve this issue, the \textit{Ramer–Douglas–Peucker algorithm} was introduced
 in the implementation to reduce the number of plotted points. The \textit{Ramer–Douglas–Peucker algorithm}
@@ -263,10 +263,10 @@ also known as the \textbf{Douglas–Peucker algorithm} and \textbf{iterative end
 is an algorithm that decimates a curve composed of line segments to a similar curve with fewer points. 
 It was one of the earliest successful algorithms developed for cartographic generalization. \cite{rdp}
 
-The \textbf{Ramer–Douglas–Peucker algorithm} has it is own optimized library in python \cite{rdp_library},
+The \textbf{Ramer–Douglas–Peucker algorithm} has it is own optimized library in \textit{Python} \cite{rdp_library},
 and it was used to reduce the number of measurements in the graphs.
 \newline
-\begin{lstlisting}[language=python, label=code:rdp, caption={using rdp to reduce points},captionpos=b]
+\begin{lstlisting}[language=Python, label=code:rdp, caption={Using rdp to reduce points},captionpos=b]
 def reduce_points_n_extract_x_axis(points):
     minimized_points = rdp(points, epsilon=0.5)
     ret_points = [None] * 10
@@ -278,7 +278,7 @@ def reduce_points_n_extract_x_axis(points):
 \end{lstlisting}
 
 The \textbf{Ramer–Douglas–Peucker algorithm} calculations to reduce the points are based on epsilon's value,
-and based on the choice of it, results can differ from each other on small scale, but for the analyzer use
+and based on the choice of it, results can differ from each other on a small scale, but for the analyzer using
 \textbf{0.5} is general enough for the use case so it was implemented as can be seen from \ref{code:rdp}.
 \newline
 \begin{figure}[H]
@@ -302,7 +302,7 @@ a matter of searching for the new channel name if it is not in the list, create 
 and add the packet's events to it, if it is already in the list add the events of 
 the packet to the existent channel.
 \newline
-\begin{lstlisting}[language=python, label=code:add_packet, caption={add receiving channel},captionpos=b]
+\begin{lstlisting}[language=Python, label=code:add_packet, caption={Add receiving channel},captionpos=b]
 def add_packet(self, packet):
 	receiver = packet.get_receiver()
 	self.__add_reciever(receiver, packet.get_events(), packet.get_id())
@@ -338,7 +338,7 @@ it is checking if the sender is outside source, channel or there is no sender, a
 to the channels' map or not. If the sender is an outside source or a channel, a tuple containing both of them
 will be added to the \textbf{\_\_channels\_map} list.
 \newline
-\begin{lstlisting}[language=python, caption={add to channels' map},captionpos=b]
+\begin{lstlisting}[language=Python, caption={Add to channels' map},captionpos=b]
 def __add_to_channels_map(self, receiver, sender, pushed_event_cnt):
 if not pushed_event_cnt:
 	return
@@ -365,7 +365,7 @@ channels' list was equal to [OutChannel, sqrtChannel, PrinterChannel] and the li
 [(2,1),(1,0)]. The \textbf{should\_update\_map} method is implementing to send only in case a change happens
 in the map and this preserves the resources taken to visualize the pipeline.
 \newline
-\begin{lstlisting}[language=python, caption={public methods for channels' map},captionpos=b]
+\begin{lstlisting}[language=Python, caption={Public methods for channels' map},captionpos=b]
 def get_channels_map(self):
 	channels_names = [c.get_name() for c in self.__channels]
 	unique_channels = channels_names + self.__na_channels
@@ -386,7 +386,7 @@ to the \textbf{GUI server}, two public methods were implemented in the \textbf{C
 and they are responsible for grouping the data into dictionaries so it can be sent through http 
 post request in a json format.
 \newline
-\begin{lstlisting}[language=python, caption={data grouping methods},captionpos=b]
+\begin{lstlisting}[language=Python, caption={Data grouping methods},captionpos=b]
 def get_channels_flags(self):
 	return [{"name": channel.get_name(),
 			"flags": channel.get_flags()}
@@ -397,3 +397,415 @@ def get_channels_measures(self):
 			"measures": channel.get_all_measures()}
 			for channel in self.__channels]
 \end{lstlisting}
+
+\subsection{Measurements}
+In the user documentation section \ref{sec:measures}, the two categories and the different measurements
+are explained, but here, the implementation of the controller and the workflow will be the focus.
+
+The controller for the measurements is the \textbf{MeasurementsManager} class and it is possible for running
+the channel's and the pipeline's measurements, it is also responsible for storing and preparing the pipeline
+measurements for sending.
+
+The \textbf{BaseMeasurements} class contains the simplified logic of measurement. The \textbf{BaseChannelMeasurement}
+and the \textbf{BasePipelineMeasurement} is inheriting from the \textbf{BaseMeasurements}.
+\newline
+\begin{lstlisting}[language=Python, caption={BaseMeasurements implementation},captionpos=b]
+class BaseMeasurements(object):
+    def __init__(self):
+        self._packet_cycle = 1
+        self._channel_manager = ChannelsManager()
+        self._measurement_key = None
+
+    def run(self):
+        raise NotImplementedError
+    
+    def _measure(self):
+        raise NotImplementedError
+
+    def set_measurement_key(self, m_key):
+        self._measurement_key = m_key
+
+    def get_measurement_key(self):
+        return self._measurement_key
+\end{lstlisting}
+
+The fields in the \textbf{BaseMeasurements} are crucial for the measurements, \textbf{\_packet\_cycle} is
+to identify the current packet cycle, and the packet cycle is the x-axis of the measurements,
+\textbf{\_channel\_manager} is to store the channel controller so it can be used easily without new insinuation
+in every measurement, and \textbf{\_measurement\_key} is the name of the measurement that will be stored in the channel
+and will also be displayed in the graph. The methods, \textbf{run} and \textbf{\_measure} have to 
+be overridden in the child classes.
+
+The \textbf{BaseChannelMeasurement} and the \textbf{BasePipelineMeasurement} are both overriding the 
+\textbf{run} method and keeping the implementation of the \textbf{\_measure} for the measurements themselves. 
+They both have to increase the \textbf{\_packet\_cycle} in every run but the logic differs because
+the \textbf{BasePipelineMeasurement} is creating the measurement point after running the measurement, which
+is left for the measurements in the \textbf{BaseChannelMeasurement} case since they are adding to the channels
+directly.
+\newline
+\begin{lstlisting}[language=Python, caption={BaseChannelMeasurement's run method},captionpos=b]
+def run(self):
+	self._measure()
+	self._packet_cycle += 1
+\end{lstlisting}
+
+\begin{lstlisting}[language=Python, caption={BasePipelineMeasurement's run method},captionpos=b]
+def run(self):
+	measurement = self._measure()
+	measurement_point = [self._packet_cycle, measurement]
+	self._packet_cycle += 1
+
+	return measurement_point
+
+\end{lstlisting}
+
+\subsubsection{Adding a new measurement}
+All the measurements are stored inside the \textbf{measurements} directory, and there are two directories
+inside for the two different categories of measurements we have, \textbf{channel\_measurements} and 
+\textbf{pipeline\_measurements} are these directories.
+
+If this new measurement belongs to the channel's measurements, you will need to override the \textbf{\_measure}
+method and the new measurement with its key to the channels. Code \ref{code:drop_ratio_measurement} is showing
+the implementation of the drop ratio measurement and gives a good example of the way most of the channel's measurements
+are and can be implemented.
+\newline
+\begin{lstlisting}[language=Python, label={code:drop_ratio_measurement}, caption={Drop ratio measurement},captionpos=b]
+class DropRatioMeasurement(BaseChannelMeasurement):
+    def _measure(self):
+        for channel in self._channel_manager.get_channels():
+            drop_ratio = self.__calculate_drop_ratio(channel)
+            channel.add_measure(self._measurement_key, 
+                                [self._packet_cycle, drop_ratio])
+
+    def __calculate_drop_ratio(self, channel):
+        nr_dropped_event = len(channel.get_event(PACKET_DROPPED))
+        nr_read_event = len(channel.get_event(READ_TIME))
+
+        if (not nr_dropped_event) and (not nr_read_event):
+            return -1
+
+        if not nr_read_event:
+            return 1
+
+        if not nr_dropped_event:
+            return 0
+
+        return nr_dropped_event/nr_read_event
+\end{lstlisting}
+
+In case the new measurement belongs to the pipeline's measurements, you will need to override the \textbf{\_measure}
+as well but the method should return the measurement in this case, and the \textbf{MeasurementsManager} will
+store and prepare the measurements for sending.
+\newline
+\begin{lstlisting}[language=Python, caption={Pipeline's measurement example},captionpos=b]
+class ExamplePipelineMeasurement(BasePipelineMeasurement):
+	def _measure(self):
+		measurement = self.__do_calculation()
+
+		return measurement
+
+	def __do_calculation(self):
+		# logic of the measurement
+\end{lstlisting}
+
+The \textbf{MeasurementsManager} has a \textbf{run} method which is used to run all the measurements, 
+running the channel's measurements is a matter of calling their \textbf{run} method, but since the pipeline measurements do not belong to any specific channel, so it is not possible to use the already
+existing logic, and this led to having a similar logic in the \textbf{MeasurementsManager} for
+storing and preparing these measurements.
+
+The logic of buffering and using the \textbf{Ramer–Douglas–Peucker algorithm} (\ref{sec:buffering_rdb}) 
+is what is used inside the controller.
+\newline
+\begin{lstlisting}[language=Python, caption={Measurements running},captionpos=b]
+	def run(self):
+		self.__run_channel_measurements()
+		self.__run_pipeline_measurements()
+	
+	def __run_channel_measurements(self):
+		for measurement in self.__channel_measuresments:
+			measurement.run()
+	
+	def __run_pipeline_measurements(self):
+		for measurement in self.__pipeline_measuresments:
+			measurement_point = measurement.run()
+			key = measurement.get_measurement_key()
+			if key not in self.__pipeline_measurements_dict:
+				self.__pipeline_measurements_dict.update({key: [measurement_point]})
+			else:
+				self.__pipeline_measurements_dict[key].append(measurement_point)
+\end{lstlisting}
+
+The \textbf{MeasurementsManager} has a method to provide the pipeline's measurements to be sent, and this
+method is \textbf{get\_pipeline\_measurements} and is almost the same as the \textbf{get\_all\_measures} method
+in the \textbf{Channel} class.
+\newline
+\begin{lstlisting}[language=Python, caption={Providing the pipeline's measurements},captionpos=b]
+def get_pipeline_measurements(self):
+	ret_measures = {}
+	for measure_name in self.__pipeline_measurements_dict:
+		ret_measures.update({measure_name:
+								reduce_points_n_extract_x_axis(self.__pipeline_measurements_dict[measure_name])})
+		self.__pipeline_measurements_dict[measure_name] = []
+
+	return ret_measures
+\end{lstlisting}
+
+These were the different components in the measurements and how they are
+implemented, next we talk about the checkers.
+
+\subsection{Checkers}
+In the user documentation section \ref{sec:checkers}, the basic idea behind the checkers and the different
+implemented ones were explained, in this development version, the architecture, the connection
+to the measurements, and the way to add a new checker are the main topic to be discussed.
+
+The checkers have only one type which associated with the channel's measurements and we might have checkers
+which do not rely on any channel's measurements, for example, \textbf{Frozen Checker}, whether it is associated
+with a measurement or not, the checker has to append or update a flag in the channels.
+
+The \textbf{BaseChecker} is the base class for the checkers, it has parameters and measurement key, 
+and these fields get filled from the configuration. it has a \textbf{run} method to be overridden by 
+the checkers.
+\newline
+\begin{lstlisting}[language=Python, caption={BaseChecker implementation},captionpos=b]
+class BaseChecker(object):
+    def __init__(self):
+        self._parameters = None
+        self._measure_key = None
+
+    def run(self):
+        raise NotImplementedError
+
+    def set_parameters(self, parameters):
+        self._parameters = parameters
+
+    def set_measure_key(self, m_key):
+        self._measure_key = m_key
+
+\end{lstlisting}
+
+\subsubsection{Adding a new checker}
+If you want to implement a checker which does not have a measurement key, you can inherit from the \textbf{BaseChecker}
+class and override the \textbf{run} and update the new flag of yours in it.
+
+\begin{lstlisting}[language=Python, caption={Checker without a measurement key example},captionpos=b]
+class ExampleChecker(BaseChecker):
+	def run(self):
+		for channel in ChannelManager().get_channels():
+			condition = self.__check()
+			if condition:
+				channel.update_flag(FROZEN, False)
+			else:
+				channel.update_flag(FROZEN, True)
+
+	def __check(self):
+		# logic of the check
+\end{lstlisting}
+
+On the other hand, if a measurement is needed for the checker, the \textbf{get\_measure} method from the 
+\textbf{Channel} class should be used to access and read the measurement. \textbf{Drop Rate} checker is 
+a good example for this case and the implementation of it, is shown in \ref{code:drop_rate_impl}.
+\newline
+\begin{lstlisting}[language=Python,label={code:drop_rate_impl}, caption={Drop Rate checker's implementation},captionpos=b]
+class DropRateChecker(BaseChecker):
+    def run(self):
+        for channel in ChannelManager().get_channels():
+            drop_rate = channel.get_measure(self._measure_key)
+            if(drop_rate > self._parameters[DROP_RATE_THRESHOLD]):
+                channel.update_flag(HIGH_DROP_RATE, True)
+            else:
+                channel.update_flag(HIGH_DROP_RATE, False)
+\end{lstlisting}
+
+The \textbf{CheckersManager} is the controller, and its responsibility is to run the checkers. It has
+only one method for this purpose.
+
+\subsection{Helper Utilities}
+Few tools were implemented to be used in multiple parts of the \textbf{analyzing server}. The
+configuration utilities are a big part of these tools and the other part is general functions used in
+various modules.
+
+\subsubsection{Configuration Utilities}\label{sec:config_utils}
+The responsibility of reading the configurations relies on the \textbf{ConfigReader} class, it is using
+the json library provided by Python to read the \textbf{config.json} file and extract the different
+information from it. It is implemented using the \textbf{singleton} design pattern and it is reading the
+configuration upon insinuation.
+
+The \textbf{ConfigReader} has many getter methods, most of the getters are suppose to return the data as 
+it is, for example, \ref{code:get_ip}, but in other cases, the reader needs to provide the data in another 
+form \ref{code:get_measurements}.
+\newline
+\begin{lstlisting}[language=Python,label={code:get_ip}, caption={Simple getter in ConfigReader},captionpos=b]
+	def get_ip_n_port(self):
+		ip = self.__data["ip"]
+		port = self.__data["port"]
+	
+		return ip, port
+\end{lstlisting}
+
+\begin{lstlisting}[language=Python,label={code:get_measurements}, caption={Measurements getters in ConfigReader},captionpos=b]
+def get_enabled_pipeline_measurements(self):
+	return self.__get_enabled_measurements("pipeline_measurements")
+
+def get_enabled_channel_measurements(self):
+	return self.__get_enabled_measurements("channel_measurements")
+
+def __get_enabled_measurements(self, measurements_type):
+	measurements = self.__data[measurements_type]
+	enabled_measurements = []
+	for measurement in measurements:
+		if measurement["enabled"]:
+			enabled_measurements.append((measurement["name"],
+										 measurement["key"]))
+
+	return enabled_measurements
+\end{lstlisting}
+
+The measurements and checkers are read by the \textbf{ConfigReader}, but the next step for them is to get
+imported, static importing is possible but that will mean having a static list of all the modules in the
+different controllers and making the insinuation process a task for these controllers. A better way to avoid
+this complication and to keep the controllers' tasks as few as possible is to have a dynamic importing.
+
+The \textbf{ModuleGetter} was introduced to solve this problem and to be the module responsible for the dynamic
+importing of the measurements and the checkers. It is using the dynamic importing provided by Python, such as
+\textbf{\_\_import\_\_} and \textbf{getattr}.
+
+The \textbf{ModuleGetter} is strict when coming of the naming of the module and the directory where it is
+placed. all the modules should have (\_) between the words and the classes should have capital letters at the beginning
+of each word, for example, frozen\_checker.py and FrozenChecker. The checker should be inside the
+\textbf{checkers}' directory and the measurements should be inside either the \textbf{channel\_measurements} or
+\textbf{pipeline\_measurements}.
+
+The \textbf{ModuleGetter} has three public methods to provide the measurements and checkers, it sets the
+parameters and measurement key for the checkers and sets the measurement key for the measurements as well.
+\newline
+\begin{lstlisting}[language=Python, caption={Puplic methods of the ModuleGetter},captionpos=b]
+def get_enabled_checkers(self):
+	enabled_checkers = []
+	for checker in ConfigReader().get_enabled_checkers():
+		c = self.__import_checker(checker["name"])
+		c.set_parameters(checker["parameters"])
+		c.set_measure_key(checker["measure_key"])
+		enabled_checkers.append(c)
+
+	return enabled_checkers
+
+def get_enabled_channel_measurements(self):
+	enabled_measurements = []
+	for measurement in ConfigReader().get_enabled_channel_measurements():
+		m = self.__import_measurement("channel_measurements", measurement[0])
+		m.set_measurement_key(measurement[1])
+		enabled_measurements.append(m)
+
+	return enabled_measurements
+
+def get_enabled_pipeline_measurements(self):
+	enabled_measurements = []
+	for measurement in ConfigReader().get_enabled_pipeline_measurements():
+		m = self.__import_measurement("pipeline_measurements", measurement[0])
+		m.set_measurement_key(measurement[1])
+		enabled_measurements.append(m)
+
+	return enabled_measurements
+\end{lstlisting}
+
+\subsubsection{General Utilities}
+They are a few general functions used across the project, and it is collected in the \textbf{utils.py} file,
+these utils are essential, for example, the function to apply the \textbf{Ramer–Douglas–Peucker algorithm}
+placed there since it is used in multiple places across the project (\ref{code:rdp}).
+
+The project has many constants, names of the events for example, and these constants are collected in the
+\textbf{constatns.py} file.
+
+The connection between the \textbf{analyzing server} and the \textbf{GUI server} happens through HTTP post requests,
+the \textbf{Requests}\cite{requests_library} library in Python used for this purpose.
+
+These were all the components of the \textbf{analyzing server} and the logic behind their implementation. In
+the next section, the \textbf{GUI server} and its components will the main topic of the discussion.
+
+\section{GUI Server}
+The server consist of a back-end and front-end, it is responsible for receiving the data sent by the 
+\textbf{analyzing server}, and display it for the user as described in \ref{sec:GUI}.
+
+The structure of the project removes any analyzing logic from the \textbf{GUI} server, hence,
+changes in the \textbf{analyzing server} do not require changes in the server unless the sent 
+data has changed.
+
+The back-end is implemented using the \textbf{Flask}\cite{flask} web application framework provided 
+by Python. It is a lightweight framework so it fits well with the goal of having a minimal and fast
+GUI.
+
+The front-end is coded using JavaScript, there was a period in the development phase when using a framework
+for the front-end was an option but adding another layer of complexity to the project was not worthy compared
+to the addition coming from these frameworks.
+
+The back-end and front-end need to be connected and the most common option for that is using HTTP connection
+between the two, but the log analyzer can have a massive stream of data and in this case, it is better to use
+\textbf{WebSockets} protocol, because it is better for low-latency communication which we aim for from the
+beginning. \textbf{Flask-SocketIO}\cite{flask-socketio} is the library provided in Python to use web sockets with flask and it is
+used in the back-end, for the front-end the web sockets' library provided for JavaScript was imported.
+
+\subsection{The Back-end}
+The back-end consists of the \textbf{Flask} application and HTML pages, there are two pages in the
+GUI, but \textbf{Flask} gives the opportunity to have inheritance in the HTML pages, so there is
+a base page with the navigation bar and the necessary imports. The back-end works mainly as a proxy
+between the \textbf{analyzing server} and the front-end, but it is also responsible for storing 
+the measurements and the pipeline for display.
+\newline
+\begin{lstlisting}[language=Python, caption={Post requests handling for the home page},captionpos=b]
+@app.route('/', methods=['POST'])
+def index_post():
+	req_json = request.json
+	if req_json.get("c_dicts"):
+		socketio.emit("update_channels", req_json.get("c_dicts"), json=True)
+		return jsonify({"ok": True})
+
+	if req_json.get("unique_channels"):
+		socketio.emit("channels_map", req_json, json=True)
+		return jsonify({"ok": True})
+
+	if req_json.get("m_dicts"):
+		socketio.emit("measures_update", req_json.get("m_dicts"), json=True)
+		return jsonify({"ok": True})
+\end{lstlisting}
+
+\subsection{The Front-end}
+The \textbf{Front-end} is responsible for showing the checkers, drawing the graph, and visualize
+the pipeline. Each one of these responsibilities has its own implemented module.
+
+The \textbf{channels.js} module creates the channels' checkers and changes in the HTML accordingly. 
+Figure \ref{fig:checkers_home_page} is the output of this module. \textbf{charts.js} is the module to create the graphs in the \textbf{Home} or the \textbf{Measurements}
+pages, it uses the \textbf{Chart.js}\cite{chart.js} library. \textbf{channels\_map} is the module created to visualize the pipeline and it uses the \textbf{vis.js}\cite{vis.js}
+library. The library is made for much more complicated visualizations, but it is used in a minimal way inside the
+module.
+\newline
+\begin{lstlisting}[language=JavaScript, caption={Creating a graph},captionpos=b]
+export function create_line_live_chart(id, title) {
+	var ctx = document.getElementById(id).getContext('2d');
+	var config = {
+		type: 'line',
+		data: [],
+		options: {
+			title: {
+				display: true,
+				text: title,
+				fontSize: 25
+			}
+		}
+	}
+	return new Chart(ctx, config);
+}
+\end{lstlisting}
+
+The \textbf{Front-end} is also responsible for assigning a unique color to each channel, to be
+displayed across all the pages, this functionality belongs to the \textbf{utils.js} module, the
+randomization of the colors is based on the predefined \textbf{random} function
+in the \textbf{Math} module, and the resulted colors are in \textbf{HSL} (for hue, saturation, lightness) 
+color format instead of the common \textbf{RGB}, to give more accurate possibilities in case of
+many channels in the pipeline.
+
+The \textbf{GUI server} went through many changes and many approaches took place to
+reach the state that was described, many libraries were tried before settling with the
+ones that are currently implemented in the project. The design of the web pages is done using
+\textbf{Bootstrap}\cite{bootstrap} and changes that can be found in the \textbf{main.css} file, the website was
+designed to be a simple yet powerful interface to represent the analyzing work in a clear and
+understandable manner.

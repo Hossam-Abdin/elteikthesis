@@ -2,16 +2,16 @@
 \label{ch:user}
 
 This chapter contains a brief description of the project, a guide on how
-to install and run the analyzer, and the way to use.
+to install and run the analyzer, and the way to use it.
 
 \section{Project Description} % Enumerations and lists
 This project is a log analyzer working alongside the PipeRT framework
 with its profiler. The project aims to analyze the continuous stream of
 data coming from the PipeRT's profiler, in a server-client relationship.
 
-The analyzer was build using python in the backends and Javascript in the frontend,
-it provides various checkers to investigate the sanity of the pipeline created by
-user using PipeRT, graphs associated with the measurements, and visualization
+The analyzer was build using \textit{Python} in the back-ends and \textit{Javascript} in the frontend,
+it provides various checkers to investigate the sanity of the pipeline created 
+by the PipeRT's user, graphs associated with the measurements, and visualization
 of the pipeline and how the channels are structured.
 
 The analyzer in itself was built to be an analyzing framework where
@@ -23,7 +23,7 @@ by new checkers and measurements.
 \section{Installation Guide}\label{sec:installiation_guide}
 PipeRT is currently supporting Linux only, but soon,
 it will support Windows as well. That said, the steps to install
-the analyzer are the same in both operations systems.
+the analyzer are the same in both operating systems.
 
 The \textbf{\url{log_analyzer}} folder inside the PipeRT project folder
 is where all of the Installation steps will take place.
@@ -41,7 +41,7 @@ before installing the requirements, in order to have a separate
 environment for the analyzer. The commands to create and run the environment
 are:
 \newline
-\begin{lstlisting}[language=bash, label={code:venv}, caption={Create virtual environment},captionpos=b]
+\begin{lstlisting}[language=bash, label={code:venv}, caption={Create and run virtual environment},captionpos=b]
 	$ python3 -m venv venv	
 	$ source venv/bin/activate
 \end{lstlisting}
@@ -71,7 +71,7 @@ To establish a connection between the profiler (Client)
 and the log analyzer (server), there should be modifications in both
 sides.
 
-\subsection{Server Side} \label{sec:server_side_config}
+\subsection{Client Side} \label{sec:server_side_config}
 
 The profiler is the utility for monitoring the DSP pipeline and sending logs,
 it has 3 arguments, first is \textbf{\url{destination_uri}},
@@ -86,17 +86,18 @@ protocol chosen.
 
 To establish a connection with the analyzer, the udp protocol
 is the one to choose, the IP and socket are based on the user
-preference.
+preference (port 5000 can not be chosen because that is the port
+for the analyzer interface).
 
 Adding the profiler to the scheduler is the last step to configure
-the server-side, and the following example shows how to add the profiler.
+the client-side, and the following example shows how to add the profiler.
 \newline
-\begin{lstlisting}[language=c++, caption={Adding profiler},captionpos=b]
+\begin{lstlisting}[language=c++, caption={Adding the profiler},captionpos=b]
 	pipert::Scheduler sch(0, pipert::Profiler("udp:127.0.0.1:8000"));
 \end{lstlisting}
 
-\subsection{Client Side}\label{client_side}
-On the client-side, the same port number that has been provided to the profiler
+\subsection{Server Side}\label{client_side}
+On the server-side, the same port number that has been provided to the profiler
 should be added in the \textbf{config.json} inside the \textbf{\url{log_analyzer}} folder. same for
 the IP as well.
 \newline
@@ -107,20 +108,19 @@ the IP as well.
 }
 \end{lstlisting}
 
-An important note: The log analyzer will start analyzing and
-draw the visualization, at the end of the first packet cycle \ref{g_config}, so, 
-the web page will be the same as \ref{fig:empty_page} 
-until the completion of the cycle.
+An important note: The log analyzer does not show any effect on the page until the end of a packet cycle
+\ref{sec:g_config}, so, the web page will be the same as \ref{fig:empty_page} 
+until the completion of the first cycle.
 
 \section{Analyzer Configuration}
 The log analyzer is made to check the sanity and analyze various
-applications and systems, so having a configuration, was essential.
+applications and systems, so having a configuration was essential.
 
-The configuration is a JSON (JavaScript Object Notation) file,
+The configuration is a \textit{JSON} (JavaScript Object Notation) file,
 the choice of the format to be JSON was due to its
 lightweight, well-known among developers, and simplicity. 
 The config.json configuration file consists of 3 main parts, 
-general, measurements' and checkers' configurations. Let's enumerate these configurations.
+general, measurements' and checkers' configurations. Let's enumerate them.
 \newline
 \begin{lstlisting}[language=bash, caption={Sample configuration},captionpos=b, label={lst:sample_confing}]
 	{
@@ -167,33 +167,33 @@ events will be deleted from the channels and a new packets cycle starts.
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.9\textwidth,height=200px]{images/packets_cycle.png}
-	\caption{Packets cycle}
+	\caption{Packet cycle}
 	\label{fig:packets_cycle}
 \end{figure}
 
 \subsection{Measurements' Configurations}
 These configurations are split into two categories, the pipeline's measurement, and
 the channel's measurements. Despite their difference from the measuring point of view
-as discussed in \ref{}, they do share the same texture of their configuration. (\ref{lst:sample_confing})
+as discussed in \ref{sec:measures}, they do share the same configuration's style. (\ref{lst:sample_confing})
 
-Both of the two main measurements are a list of dictionaries, where each dictionary
+Both of the two measurements are a list of dictionaries, where each dictionary
 represents a measurement, and each measurement has three key-value pairs,
-\textbf{name} to be able to dynamically import them as in \ref{}, \textbf{enabled}
+\textbf{name}, \textbf{enabled}
 to turn the measurement on or off, and \textbf{key} this will be the shown
 text for the measurement and will also help to connect the measurement to 
-a specific checker if needed (see \ref{}).
+a specific checker if needed.
 
 \subsection{Checkers' Configurations}
-As it is shown from \ref{lst:sample_confing}, the checkers' configuration is a
+The checkers' configuration is a
 list of dictionaries where each dictionary is a checker's configuration. Each configuration
 contains the checker's name in the \textbf{name} field, whether it should work or not in
 the \textbf{enabled} field, \textbf{measure\_key} to specify the measurement
 for that checker if needed, and a \textbf{parameters} field where the parameter
 of the checker can be created or changed.
 
-The \textbf{name} field should be the same name as the file of the checker 
+The \textbf{name} field should be the same name as the file of the checker or the measurement
 without the extension (.py). And that is how the dynamic importing module in 
-the project will be able to import the checker with its configuration \ref{}.
+the project will be able to import the checker with its configuration \ref{sec:config_utils}.
 
 The \textbf{enabled} field is a boolean field to turn on or off the checker.
 
@@ -206,14 +206,17 @@ analyzer, and it is the user's responsibility to assign the appropriate values.
 
 \section{Measurements} \label{sec:measures}
 The backbone of the log analyzer is the measurements, and that is the reason for implementing
-various of them, given these varieties of measurements, it is expected to be able to 
+various of them, given these varieties of measurements, it is expected to
 help to check the sanity of the pipeline and spotting the bottlenecks for the user. They
-are also essential for most of the checkers (more about it in \ref{sec::checkers}).
+are also essential for most of the checkers (more about it in \ref{sec:checkers}).
 
 They consist of two categories, \textbf{channel's} and \textbf{pipeline's} measurements. All the
 measurements run once per packet cycle and the graphs resulted should be drawn every ten cycles,
 as can be seen from figure \ref{fig:measurement_graph}. The following pages contain a detailed description
 of the categories and their measurements.
+
+The profiler and its events are described in detail at \ref{sec:profiler}, the measurements
+use these events as an input to produce results.
 \newline
 \begin{figure}[H]
 	\centering
@@ -246,9 +249,27 @@ Its responsibility is calculating the average of the fill time by dividing the s
 of the fill time events' average over the number of the fill time. In case the is no fill
 time events, it will output \textbf{0}.
 
-\subsubsection{Time To Buffer Average Measurement}\label{sec:time_to_buffer_average}
+\subsubsection{Time To Buffer Average Measurement} \label{sec:time_to_buffer_average}
+It calculates the average value of the buffering time. The buffering time is the time
+packets spend from the end of the execution in the previous channel  
+till they are buffered in the current channel.
 
-\section{Checkers}\label{sec::checkers}
+\subsubsection{Read Time Measurement}
+Measure the average read time of the packets, if there are no read events, it will return zero.
+
+\subsubsection{Packet Life Time Measurement}
+Calculates the ratio of the time the packets spent in all the channels to the time spent in a channel. 
+The time packets spend is the average sum of fill time, read time, execution time, packet pushed, 
+and packet retrieved events.
+
+\subsection{Pipeline's Measurements}
+The measurements in this category use all of the gathered information from all the channels in the pipeline.
+There is one implement measurement, and it is the \textbf{Total Execution Time Ratio Measurement},
+it calculates the ratio between the execution time events and the 
+total time the packets spent in the pipeline, in other words, it calculates the ratio of pipeline thrust time to
+the total execution time of all channels.
+
+\section{Checkers}\label{sec:checkers}
 Checkers results flags and measurements of different aspects of the channel and pipeline. All 
 the enabled checkers run for all the channels in the pipeline and in case the check passes, it will appear
 in the webpage as in \ref{fig:passed_checker}, on the other hand, figure \ref{fig:failed_checker} shows 
@@ -303,8 +324,11 @@ Its configuration contains only one key-value pair to set the threshold of the f
 name is \textbf{\url{HIGH_FILL_TIME}}.
 
 \subsection{Time To Buffer Average Checker}
+It uses the \textbf{Time To Buffer Average Measurement} (\ref{sec:time_to_buffer_average}) and checks
+for the channels if the measurement for them exceeds the configured value if it exceeds the checker
+fails.
 
-\section{Graphical User Interface}
+\section{Graphical User Interface}\label{sec:GUI}
 The analyzer interface is a webpage containing two pages, \textbf{Home} and \textbf{Measurements}. In this
 section, I will describe the components of each page and the features provided.
 
@@ -328,7 +352,7 @@ As mentioned before, before completing the first packet cycle, the home page wil
 Once the profiler is sending regularly, you can expect to have the home page similar to figure \ref{fig:home_page_running_state}.
 
 Each channel has a corresponding color which is used through the different components in order to ease the
-distinguishment and to have a visual identity belong to each of them.
+distinguishment and to have a visual identity for each of them.
 \newline
 \begin{figure}[H]
 	\centering
@@ -337,6 +361,11 @@ distinguishment and to have a visual identity belong to each of them.
 	\label{fig:home_page_running_state}
 \end{figure}
 
+\subsubsection{Channels' Checkers}
+They are located in the top left of the home page (\ref{fig:home_page_running_state}), 
+each channel is represented as a box where the name
+of the channel is at the top of it and the checkers and their status come after. 
+\newline
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.9\textwidth,height=200px]{images/checkers_home_page.png}
@@ -344,29 +373,17 @@ distinguishment and to have a visual identity belong to each of them.
 	\label{fig:checkers_home_page}
 \end{figure}
 
+\subsubsection{Measurements}\label{measuremets_home}
+They can be found in the top right of the home page (\ref{fig:home_page_running_state}). They are
+two measurements on the page, \textbf{execution Time} and \textbf{drop rate}, these two measurements
+were chosen because of their capabilities of reflecting important aspects of the channels.
+\newline
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.9\textwidth,height=300px]{images/measures_home_page.png}
 	\caption{Measurements in the home page}
 	\label{fig:measures_home_page}
 \end{figure}
-
-\begin{figure}[H]
-	\centering
-	\includegraphics[width=0.9\textwidth,height=150px]{images/pipeline_viz.png}
-	\caption{Pipeline's visualization in the home page}
-	\label{fig:pipeline_viz_home_page}
-\end{figure}
-
-\subsubsection{Channels' Checkers}
-They are located in the top left of the home page (\ref{fig:home_page_running_state}), 
-each channel is represented as a box where the name
-of the channel is at the top of it and the checkers and their status come after. 
-
-\subsubsection{Measurements}\label{measuremets_home}
-They can be found in the top right of the home page (\ref{fig:home_page_running_state}). They are
-two measurements on the page, \textbf{execution Time} and \textbf{drop rate}, these two measurements
-were chosen because of their capabilities of reflecting important aspects of the channels.
 
 As shown in figure \ref{fig:measurement_graph}, the name of the measurement is at the top, and the channels'
 names and colors following come after, and then the graph itself. Each channel corresponds to the color
@@ -385,7 +402,7 @@ will also be included.
 
 In many cases, some channels can be unseen because of other channels' high y-axis value. If you want
 to hide the channel line graph, you can click on the channel's name or color, and there will be 
-a horizontal line on the clicked channel's name to indicate that its measurements will not be shown
+a horizontal line on the clicked channel's name to indicate that its measurements is not shown
 in the graph. Figure 
 \ref{fig:remving_channel_graph} shows the effect of this action.
 \newline
@@ -399,7 +416,14 @@ in the graph. Figure
 \subsubsection{Pipeline Visualization}
 It is located at the bottom of the home page. Each box contains the name of a channel, and the box's color is the
 channel's color, and the arrows between these boxes represent the connection between the channels in the
-actual pipeline created by the user as in figure \ref{fig:pipeline_viz_home_page}.
+actual pipeline created by the user.
+\newline
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth,height=150px]{images/pipeline_viz.png}
+	\caption{Pipeline's visualization in the home page}
+	\label{fig:pipeline_viz_home_page}
+\end{figure}
 
 You can change the position of the pipeline visualization by clicking anywhere in the bottom half of the page
 beside the channels' boxes themselves and dragging the visualization around. It is also possible to change the 
