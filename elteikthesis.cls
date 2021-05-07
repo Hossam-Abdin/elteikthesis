@@ -28,13 +28,17 @@
 \RequirePackage{etoolbox}
 \RequirePackage{xparse}
 \RequirePackage{ifthen}
-
+\usepackage{pdfpages}
+\usepackage{url}
+\usepackage{tikzsymbols}
 % ------------------------------
 % Paraméterek feldolgozása
 \newtoggle{oneside}\toggletrue{oneside}
 \newtoggle{hypenation}\toggletrue{hypenation}
-\newtoggle{parspace}\togglefalse{parspace}
+\newtoggle{parspace}\toggletrue{parspace}
 \newtoggle{indent}\toggletrue{indent}
+\setlength{\parindent}{4em}
+\setlength{\parskip}{1em}
 
 \DeclareOption{nohyp}{\togglefalse{hypenation}}
 \DeclareOption{parspace}{\toggletrue{parspace}}
@@ -227,13 +231,12 @@
 	\RequirePackage{parskip}
 	% A bekezdések első soros behúzása maradjon meg
 	\iftoggle{indent}{
-		\setlength{\parindent}{3.5ex}
+		\setlength{\parindent}{0ex}
 	}{}
 }{
 	% Nincs se térköz, se behúzás
-	\nottoggle{indent}{
 		\RequirePackage[skip=0pt]{parskip}
-	}{
+	{
 		% alapértelmezés szerint nincs térköz, de van behúzás
 	}
 }
