@@ -260,7 +260,7 @@ The buffering approach was successfully able to deal with the first obstacle, bu
 having unnecessary points in the graphs, to solve this issue, the \textit{Ramer–Douglas–Peucker algorithm} was introduced
 in the implementation to reduce the number of plotted points. The \textit{Ramer–Douglas–Peucker algorithm}
 also known as the \textbf{Douglas–Peucker algorithm} and \textbf{iterative end-point fit algorithm}, 
-is an algorithm that perserve the shape of the curve with fewer points on it. 
+is an algorithm that preserve the shape of the curve with fewer points on it. 
 It was one of the first successful algorithms developed for cartographic generalization. \cite{rdp}
 
 The \textbf{Ramer–Douglas–Peucker algorithm} has it is own optimized library in \textit{Python} \cite{rdp_library},
@@ -845,5 +845,6 @@ different browsers. Graphs properties (\ref{sec:measuremets_home}) were tested o
 and they were fully working, the pipeline visualization properties (\ref{sec:pipeline_vis}) from dragging, 
 zooming, and rearranging were tested, other general tests were applied on the web pages.
 
-The website and the project as a whole was used in very frequent packet sending scenarios as
+The website and the project as a whole was used in very frequent packet sending scenarios (almost 2500
+packets per second sent from the profiler) as
 stress tests and it was able to sustain a good performance through them.
