@@ -249,8 +249,8 @@ stop, secondly, not every measurement is worth of plotting, for example when hav
 the same measurement.
 
 \subsubsection{Buffering approach}
-We encountered two obstacles in this approach, the intendant was to slow down the sending of the measurements
-so that the browser can draw the graphs without overwhelming it. Instead of sending in every packet cycle,
+We encountered two obstacles in this approach, the intention was to slow down the sending of the measurements
+so that the browser can draw the graphs without overloading it. Instead of sending in every packet cycle,
 the measurements are going to be stored in lists, and once the \textbf{AnalyzerServer} is requesting the measurements
 the channel is going to send them, and empty the lists and this repeat every specific number of cycles. It is
 implemented to be ten cycles for now.
@@ -260,8 +260,8 @@ The buffering approach was successfully able to deal with the first obstacle, bu
 having unnecessary points in the graphs, to solve this issue, the \textit{Ramer–Douglas–Peucker algorithm} was introduced
 in the implementation to reduce the number of plotted points. The \textit{Ramer–Douglas–Peucker algorithm}
 also known as the \textbf{Douglas–Peucker algorithm} and \textbf{iterative end-point fit algorithm}, 
-is an algorithm that decimates a curve composed of line segments to a similar curve with fewer points. 
-It was one of the earliest successful algorithms developed for cartographic generalization. \cite{rdp}
+is an algorithm that preserve the shape of the curve with fewer points on it. 
+It was one of the first successful algorithms developed for cartographic generalization. \cite{rdp}
 
 The \textbf{Ramer–Douglas–Peucker algorithm} has it is own optimized library in \textit{Python} \cite{rdp_library},
 and it was used to reduce the number of measurements in the graphs.
@@ -451,11 +451,11 @@ def run(self):
 
 \begin{lstlisting}[language=Python, caption={BasePipelineMeasurement's run method},captionpos=b]
 def run(self):
-	measurement = self._measure()
-	measurement_point = [self._packet_cycle, measurement]
-	self._packet_cycle += 1
+	for channel in self._channel_manager.get_channels():
+		measure = self._measure(channel)
+		channel.add_measure(self._measurement_key, [self._packet_cycle, measure])
 
-	return measurement_point
+	self._packet_cycle += 1
 
 \end{lstlisting}
 
@@ -471,13 +471,7 @@ are and can be implemented.
 \newline
 \begin{lstlisting}[language=Python, label={code:drop_ratio_measurement}, caption={Drop ratio measurement},captionpos=b]
 class DropRatioMeasurement(BaseChannelMeasurement):
-    def _measure(self):
-        for channel in self._channel_manager.get_channels():
-            drop_ratio = self.__calculate_drop_ratio(channel)
-            channel.add_measure(self._measurement_key, 
-                                [self._packet_cycle, drop_ratio])
-
-    def __calculate_drop_ratio(self, channel):
+    def _measure(self, channel):
         nr_dropped_event = len(channel.get_event(PACKET_DROPPED))
         nr_read_event = len(channel.get_event(READ_TIME))
 
@@ -563,8 +557,8 @@ which do not rely on any channel's measurements, for example, \textbf{Frozen Che
 with a measurement or not, the checker has to append or update a flag in the channels.
 
 The \textbf{BaseChecker} is the base class for the checkers, it has parameters and measurement key, 
-and these fields get filled from the configuration. it has a \textbf{run} method to be overridden by 
-the checkers.
+and these fields get filled from the configuration. it has a \textbf{run} method to run the checker and
+\textbf{\_check} method to be overridden by the checkers to implement the logic.
 \newline
 \begin{lstlisting}[language=Python, caption={BaseChecker implementation},captionpos=b]
 class BaseChecker(object):
@@ -573,7 +567,11 @@ class BaseChecker(object):
         self._measure_key = None
 
     def run(self):
-        raise NotImplementedError
+		for channel in self.__channels_manager.get_channels():
+			channel.add_flag(self.__flag_name, self._check(channel))
+
+	def _check(self, channel):
+		raise NotImplementedError
 
     def set_parameters(self, parameters):
         self._parameters = parameters
@@ -585,20 +583,17 @@ class BaseChecker(object):
 
 \subsubsection{Adding a new checker}
 If you want to implement a checker which does not have a measurement key, you can inherit from the \textbf{BaseChecker}
-class and override the \textbf{run} and update the new flag of yours in it.
+class and override the \textbf{\_check} and update the new flag of yours in it.
 
-\begin{lstlisting}[language=Python, caption={Checker without a measurement key example},captionpos=b]
-class ExampleChecker(BaseChecker):
-	def run(self):
-		for channel in ChannelManager().get_channels():
-			condition = self.__check()
-			if condition:
-				channel.update_flag(FROZEN, False)
-			else:
-				channel.update_flag(FROZEN, True)
+\begin{lstlisting}[language=Python, caption={Frozen checker's implementation},captionpos=b]
+class FrozenChecker(BaseChecker):
+    def _check(self, channel):
+        events_list = flatten_list(channel.get_events())
+        flag_val = len(events_list) == 0
+        return flag_val
 
-	def __check(self):
-		# logic of the check
+    def _set_flag_name(self):
+        return FROZEN
 \end{lstlisting}
 
 On the other hand, if a measurement is needed for the checker, the \textbf{get\_measure} method from the 
@@ -607,13 +602,13 @@ a good example for this case and the implementation of it, is shown in \ref{code
 \newline
 \begin{lstlisting}[language=Python,label={code:drop_rate_impl}, caption={Drop Rate checker's implementation},captionpos=b]
 class DropRateChecker(BaseChecker):
-    def run(self):
-        for channel in ChannelManager().get_channels():
-            drop_rate = channel.get_measure(self._measure_key)
-            if(drop_rate > self._parameters[DROP_RATE_THRESHOLD]):
-                channel.update_flag(HIGH_DROP_RATE, True)
-            else:
-                channel.update_flag(HIGH_DROP_RATE, False)
+	def _set_flag_name(self):
+        return HIGH_DROP_RATE
+
+    def _check(self, channel):
+        drop_rate = channel.get_measure(self._measure_key)
+        flag_val = drop_rate > self._parameters[DROP_RATE_THRESHOLD]
+        return flag_val
 \end{lstlisting}
 
 The \textbf{CheckersManager} is the controller, and its responsibility is to run the checkers. It has
@@ -769,7 +764,7 @@ def index_post():
 \end{lstlisting}
 
 \subsection{The Front-end}
-The \textbf{Front-end} is responsible for showing the checkers, drawing the graph, and visualize
+The \textbf{Front-end} is responsible for showing the checkers, drawing the graphs, and visualize
 the pipeline. Each one of these responsibilities has its own implemented module.
 
 The \textbf{channels.js} module creates the channels' checkers and changes in the HTML accordingly. 
@@ -809,3 +804,47 @@ ones that are currently implemented in the project. The design of the web pages 
 \textbf{Bootstrap}\cite{bootstrap} and changes that can be found in the \textbf{main.css} file, the website was
 designed to be a simple yet powerful interface to represent the analyzing work in a clear and
 understandable manner.
+
+\section{Testing}
+The different components of the analyzer were tested differently. The \textbf{test} folder in the
+\textbf{log\_analyzer} directory contains all the automated tests.
+
+\subsection{Analyzer server}
+It was tested using the \textbf{unittest} library  in \textit{Python}, which gives very good
+utilities to test like mock objects and patching class and these utilities were using heavily
+in testing to ensure good unit testing hence good quality code.
+
+Most of the modules are tested in their own files where each file contains a class inheriting
+from the \textbf{unittest.TestCase} class. This applies to the checkers and measurements as well,
+not all of them are tested but manual testing was applied to these modules without automated testing.
+\newline
+\begin{lstlisting}[language=python, caption={Example of the automated tests},captionpos=b]
+@patch(POINTS_N_EXTRACT_X_AXIS)
+def test_when_getting_all_measures_should_return_all(self, rdp):
+	# Given
+	c = Channel("channel", [], 11)
+	rdp.return_value = "ok"
+	# When
+	c.add_measure("measurement-1", (1, 1))
+	c.add_measure("measurement-2", (2, 1))
+	c.add_measure("measurement-3", (3, 2))
+	# Then
+	measures = c.get_all_measures()
+	expected_measures = {"measurement-1": "ok", "measurement-2": "ok",
+							"measurement-3": "ok"}
+	self.assertEqual(measures, expected_measures)
+}
+\end{lstlisting}
+
+In case of new addition of a checker or a measurement to the \textbf{analyzer\_server}, it is
+highly recommended to add a new test file for it.
+
+\subsection{GUI server}
+In the case of this server manual tests were applied to ensure the quality of the website on 
+different browsers. Graphs properties (\ref{sec:measuremets_home}) were tested on a different browsers
+and they were fully working, the pipeline visualization properties (\ref{sec:pipeline_vis}) from dragging, 
+zooming, and rearranging were tested, other general tests were applied on the web pages.
+
+The website and the project as a whole was used in very frequent packet sending scenarios (almost 2500
+packets per second sent from the profiler) as
+stress tests and it was able to sustain a good performance through them.

@@ -9,7 +9,7 @@ This project is a log analyzer working alongside the PipeRT framework
 with its profiler. The project aims to analyze the continuous stream of
 data coming from the PipeRT's profiler, in a server-client relationship.
 
-The analyzer was build using \textit{Python} in the back-ends and \textit{Javascript} in the frontend,
+The analyzer was built using \textit{Python} regarding the back-ends and \textit{Javascript} regarding the frontend,
 it provides various checkers to investigate the sanity of the pipeline created 
 by the PipeRT's user, graphs associated with the measurements, and visualization
 of the pipeline and how the channels are structured.
@@ -24,6 +24,8 @@ by new checkers and measurements.
 PipeRT is currently supporting Linux only, but soon,
 it will support Windows as well. That said, the steps to install
 the analyzer are the same in both operating systems.
+
+To download PipeRT, please clone the repository from \url{https://github.com/gerazo/pipert}.
 
 The \textbf{\url{log_analyzer}} folder inside the PipeRT project folder
 is where all of the Installation steps will take place.
@@ -74,15 +76,18 @@ sides.
 \subsection{Client Side} \label{sec:server_side_config}
 
 The profiler is the utility for monitoring the DSP pipeline and sending logs,
-it has 3 arguments, first is \textbf{\url{destination_uri}},
-which describes the destination and the used protocol, udp and file
-are the protocol options in the profiler currently. The Second argument
-is \textbf{\url{aggregation_time_msec}} which is the time in milliseconds to wait 
-before gathering monitoring data again, so it determines how often aggregated
-log data is sent to the log processor, if not given that means not to collect
-periodically. The third argument is \textbf{\url{buffer_size}}, it controls the size
-of buffer which is filled to be sent at once, the default value depends on the
-protocol chosen.
+it has 3 arguments:
+\begin{itemize}
+	\item \textbf{\url{destination_uri}}, which describes the destination and the used protocol, udp and file 
+	are the protocol options in the profiler currently.
+	\item \textbf{\url{aggregation_time_msec}} which is the time in milliseconds to wait 
+	before gathering monitoring data again, so it determines how often aggregated
+	log data is sent to the log processor, if not given that means not to collect
+	periodically.
+	\item \textbf{\url{buffer_size}}, it controls the size
+	of buffer which is filled to be sent at once, the default value depends on the
+	protocol chosen.
+\end{itemize} 
 
 To establish a connection with the analyzer, the udp protocol
 is the one to choose, the IP and socket are based on the user
@@ -373,7 +378,7 @@ of the channel is at the top of it and the checkers and their status come after.
 	\label{fig:checkers_home_page}
 \end{figure}
 
-\subsubsection{Measurements}\label{measuremets_home}
+\subsubsection{Measurements}\label{sec:measuremets_home}
 They can be found in the top right of the home page (\ref{fig:home_page_running_state}). They are
 two measurements on the page, \textbf{execution Time} and \textbf{drop rate}, these two measurements
 were chosen because of their capabilities of reflecting important aspects of the channels.
@@ -413,7 +418,7 @@ in the graph. Figure
 	\label{fig:removing_channel_graph}
 \end{figure}
 
-\subsubsection{Pipeline Visualization}
+\subsubsection{Pipeline Visualization}\label{sec:pipeline_vis}
 It is located at the bottom of the home page. Each box contains the name of a channel, and the box's color is the
 channel's color, and the arrows between these boxes represent the connection between the channels in the
 actual pipeline created by the user.
